@@ -22,7 +22,8 @@ class Fetcher;
 // etc.
 class Container: public jsg::Object {
  public:
-  Container(rpc::Container::Client rpcClient, bool running, kj::Maybe<kj::String> health = kj::none);
+  Container(
+      rpc::Container::Client rpcClient, bool running, kj::Maybe<kj::String> health = kj::none);
 
   struct StartupOptions {
     jsg::Optional<kj::Array<kj::String>> entrypoint;

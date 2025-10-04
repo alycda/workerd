@@ -262,10 +262,7 @@ kj::Promise<ContainerClient::InspectResponse> ContainerClient::inspectContainer(
   }
 
   co_return InspectResponse{
-    .isRunning = running,
-    .ports = kj::mv(portMappings),
-    .healthStatus = kj::mv(healthStatus)
-  };
+    .isRunning = running, .ports = kj::mv(portMappings), .healthStatus = kj::mv(healthStatus)};
 }
 
 kj::Promise<void> ContainerClient::createContainer(

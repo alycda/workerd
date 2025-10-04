@@ -3677,7 +3677,9 @@ kj::Promise<void> Worker::Actor::ensureConstructedImpl(IoContext& context, Actor
       }
     }
 
-    co_await context.run([this, &info, containerRunning, containerHealth = kj::mv(containerHealth)](Worker::Lock& lock) mutable {
+    co_await context.run(
+        [this, &info, containerRunning, containerHealth = kj::mv(containerHealth)](
+            Worker::Lock& lock) mutable {
       jsg::Lock& js = lock;
 
       kj::Maybe<jsg::Ref<api::DurableObjectStorage>> storage;
@@ -3707,7 +3709,8 @@ kj::Promise<void> Worker::Actor::ensureConstructedImpl(IoContext& context, Actor
       handler.missingSuperclass = info.missingSuperclass;
 
       impl->classInstance = kj::mv(handler);
-    }, inputLock.addRef());
+    },
+        inputLock.addRef());
     // We addRef() the inputLock above rather than kj::mv() it so that the lock remains held
     // through the catch block below, if an exception is thrown. This is important since we
     // MUST update `impl->classInstance` to something other than `Initializing` before we
