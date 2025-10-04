@@ -137,7 +137,7 @@ class ContainerClient::DockerPort final: public rpc::Container::Port::Server {
     // Port mappings might have outdated mappings, we can't know if a connect request
     // fails because the app hasn't finished starting up or because the mapping is outdated.
     // To be safe we should inspect the container to get up to date mappings.
-    const auto [_running, portMappings] = co_await containerClient.inspectContainer();
+    const auto [_running, portMappings, _health] = co_await containerClient.inspectContainer();
     auto maybeMappedPort = portMappings.find(containerPort);
     if (maybeMappedPort == kj::none) {
       throw JSG_KJ_EXCEPTION(DISCONNECTED, Error,
