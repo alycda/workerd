@@ -22,7 +22,7 @@ class Fetcher;
 // etc.
 class Container: public jsg::Object {
  public:
-  Container(rpc::Container::Client rpcClient, bool running);
+  Container(rpc::Container::Client rpcClient, bool running, kj::Maybe<kj::String> health = kj::none);
 
   struct StartupOptions {
     jsg::Optional<kj::Array<kj::String>> entrypoint;
@@ -38,6 +38,13 @@ class Container: public jsg::Object {
     return running;
   }
 
+  jsg::Optional<kj::StringPtr> getHealth() {
+    KJ_IF_SOME(h, health) {
+      return h.asPtr();
+    }
+    return kj::none;
+  }
+
   // Methods correspond closely to the RPC interface in `container.capnp`.
   void start(jsg::Lock& js, jsg::Optional<StartupOptions> options);
   jsg::Promise<void> monitor(jsg::Lock& js);
@@ -50,6 +57,7 @@ class Container: public jsg::Object {
 
   JSG_RESOURCE_TYPE(Container, CompatibilityFlags::Reader flags) {
     JSG_READONLY_PROTOTYPE_PROPERTY(running, getRunning);
+    JSG_READONLY_PROTOTYPE_PROPERTY(health, getHealth);
     JSG_METHOD(start);
     JSG_METHOD(monitor);
     JSG_METHOD(destroy);
@@ -67,6 +75,7 @@ class Container: public jsg::Object {
  private:
   IoOwn<rpc::Container::Client> rpcClient;
   bool running;
+  kj::Maybe<kj::String> health;
 
   kj::Maybe<jsg::Value> destroyReason;
 

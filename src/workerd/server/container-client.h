@@ -67,6 +67,7 @@ class ContainerClient final: public rpc::Container::Server {
   struct InspectResponse {
     bool isRunning;
     kj::HashMap<uint16_t, uint16_t> ports;
+    kj::Maybe<kj::String> healthStatus;  // "none", "starting", "healthy", "unhealthy"
   };
 
   // Docker API v1.50 helper methods

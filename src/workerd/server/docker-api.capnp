@@ -176,6 +176,14 @@ struct Docker {
     statusCode @0 :Int32 $Json.name("StatusCode");
   }
 
+  struct Health {
+    # Docker HEALTHCHECK status
+    # See: https://docs.docker.com/engine/api/v1.43/#tag/Container/operation/ContainerInspect
+    status @0 :Text $Json.name("Status"); # "none", "starting", "healthy", "unhealthy"
+    failingStreak @1 :UInt32 $Json.name("FailingStreak");
+    # Note: Log field is available but omitted for simplicity
+  }
+
   struct ContainerState {
     # Container's running state
     status @0 :Text $Json.name("Status"); # "created", "running", "paused", "restarting", "removing", "exited", "dead"
@@ -189,6 +197,7 @@ struct Docker {
     error @8 :Text $Json.name("Error");
     startedAt @9 :Text $Json.name("StartedAt");
     finishedAt @10 :Text $Json.name("FinishedAt");
+    health @11 :Health $Json.name("Health");
   }
 
   struct GraphDriverData {

@@ -12,9 +12,10 @@ namespace workerd::api {
 // =======================================================================================
 // Basic lifecycle methods
 
-Container::Container(rpc::Container::Client rpcClient, bool running)
+Container::Container(rpc::Container::Client rpcClient, bool running, kj::Maybe<kj::String> health)
     : rpcClient(IoContext::current().addObject(kj::heap(kj::mv(rpcClient)))),
-      running(running) {}
+      running(running),
+      health(kj::mv(health)) {}
 
 void Container::start(jsg::Lock& js, jsg::Optional<StartupOptions> maybeOptions) {
   JSG_REQUIRE(!running, Error, "start() cannot be called on a container that is already running.");

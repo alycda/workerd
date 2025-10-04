@@ -12,8 +12,9 @@ interface Container @0x9aaceefc06523bca {
   # When the actor shuts down, workerd will drop the `Container` capability, at which point
   # the container engine should implicitly destroy the container.
 
-  status @0 () -> (running :Bool);
+  status @0 () -> (running :Bool, health :Text);
   # Returns the container's current status. The runtime will always call this at DO startup.
+  # Health will be one of: "none", "starting", "healthy", "unhealthy", or empty if unavailable.
 
   start @1 StartParams -> ();
   # Start the container. It's an error to call this if the container is already running.
