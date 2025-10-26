@@ -3829,6 +3829,7 @@ interface EventSourceEventSourceInit {
 }
 interface Container {
   get running(): boolean;
+  get health(): string | undefined;
   start(options?: ContainerStartupOptions): void;
   monitor(): Promise<void>;
   destroy(error?: any): Promise<void>;

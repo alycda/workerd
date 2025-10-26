@@ -3665,6 +3665,7 @@ kj::Promise<void> Worker::Actor::ensureConstructedImpl(IoContext& context, Actor
 
   try {
     bool containerRunning = false;
+    kj::Maybe<kj::String> containerHealth = kj::none;
     KJ_IF_SOME(c, impl->container) {
       // We need to do an RPC to check if the container is running.
       // TODO(perf): It would be nice if we could have started this RPC earlier, e.g. in parallel
@@ -3673,9 +3674,15 @@ kj::Promise<void> Worker::Actor::ensureConstructedImpl(IoContext& context, Actor
       //   not a huge deal.
       auto status = co_await c.statusRequest(capnp::MessageSize{4, 0}).send();
       containerRunning = status.getRunning();
+      auto health = status.getHealth();
+      if (health.size() > 0) {
+        containerHealth = kj::str(health);
+      }
     }
 
-    co_await context.run([this, &info, containerRunning](Worker::Lock& lock) {
+    co_await context.run(
+        [this, &info, containerRunning, containerHealth = kj::mv(containerHealth)](
+            Worker::Lock& lock) mutable {
       jsg::Lock& js = lock;
 
       kj::Maybe<jsg::Ref<api::DurableObjectStorage>> storage;
@@ -3686,7 +3693,7 @@ kj::Promise<void> Worker::Actor::ensureConstructedImpl(IoContext& context, Actor
       auto ctx = js.alloc<api::DurableObjectState>(js, cloneId(),
           jsg::JsValue(KJ_ASSERT_NONNULL(lock.getWorker().impl->ctxExports).getHandle(js)),
           impl->props.toJs(js), kj::mv(storage), kj::mv(impl->container), containerRunning,
-          impl->facetManager);
+          kj::mv(containerHealth), impl->facetManager);
 
       auto handler =
           info.cls(lock, ctx.addRef(), KJ_ASSERT_NONNULL(lock.getWorker().impl->env).addRef(js));
@@ -3705,7 +3712,8 @@ kj::Promise<void> Worker::Actor::ensureConstructedImpl(IoContext& context, Actor
       handler.missingSuperclass = info.missingSuperclass;
 
       impl->classInstance = kj::mv(handler);
-    }, inputLock.addRef());
+    },
+        inputLock.addRef());
     // We addRef() the inputLock above rather than kj::mv() it so that the lock remains held
     // through the catch block below, if an exception is thrown. This is important since we
     // MUST update `impl->classInstance` to something other than `Initializing` before we

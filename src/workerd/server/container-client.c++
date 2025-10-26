@@ -137,7 +137,7 @@ class ContainerClient::DockerPort final: public rpc::Container::Port::Server {
     // Port mappings might have outdated mappings, we can't know if a connect request
     // fails because the app hasn't finished starting up or because the mapping is outdated.
     // To be safe we should inspect the container to get up to date mappings.
-    const auto [_running, portMappings] = co_await containerClient.inspectContainer();
+    const auto [_running, portMappings, _health] = co_await containerClient.inspectContainer();
     auto maybeMappedPort = portMappings.find(containerPort);
     if (maybeMappedPort == kj::none) {
       throw JSG_KJ_EXCEPTION(DISCONNECTED, Error,
@@ -211,7 +211,7 @@ kj::Promise<ContainerClient::InspectResponse> ContainerClient::inspectContainer(
   // We check if the container with the given name exist, and if it's not,
   // we simply return false while avoiding an unnecessary error.
   if (response.statusCode == 404) {
-    co_return InspectResponse{.isRunning = false, .ports = {}};
+    co_return InspectResponse{.isRunning = false, .ports = {}, .healthStatus = kj::none};
   }
   JSG_REQUIRE(response.statusCode == 200, Error, "Container inspect failed");
   // Parse JSON response
@@ -251,7 +251,18 @@ kj::Promise<ContainerClient::InspectResponse> ContainerClient::inspectContainer(
   JSG_REQUIRE(state.hasStatus(), Error, "Malformed ContainerInspect response");
   auto status = state.getStatus();
   bool running = status == "running";
-  co_return InspectResponse{.isRunning = running, .ports = kj::mv(portMappings)};
+
+  // Parse health status if available
+  kj::Maybe<kj::String> healthStatus = kj::none;
+  if (state.hasHealth()) {
+    auto health = state.getHealth();
+    if (health.hasStatus()) {
+      healthStatus = kj::str(health.getStatus());
+    }
+  }
+
+  co_return InspectResponse{
+    .isRunning = running, .ports = kj::mv(portMappings), .healthStatus = kj::mv(healthStatus)};
 }
 
 kj::Promise<void> ContainerClient::createContainer(
@@ -369,8 +380,14 @@ kj::Promise<void> ContainerClient::destroyContainer() {
 }
 
 kj::Promise<void> ContainerClient::status(StatusContext context) {
-  const auto [isRunning, _ports] = co_await inspectContainer();
-  context.getResults().setRunning(isRunning);
+  const auto [isRunning, _ports, healthStatus] = co_await inspectContainer();
+  auto results = context.getResults();
+  results.setRunning(isRunning);
+  KJ_IF_SOME(health, healthStatus) {
+    results.setHealth(health);
+  } else {
+    results.setHealth("");
+  }
 }
 
 kj::Promise<void> ContainerClient::start(StartContext context) {

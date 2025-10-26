@@ -1045,13 +1045,14 @@ DurableObjectState::DurableObjectState(jsg::Lock& js,
     kj::Maybe<jsg::Ref<DurableObjectStorage>> storage,
     kj::Maybe<rpc::Container::Client> container,
     bool containerRunning,
+    kj::Maybe<kj::String> containerHealth,
     kj::Maybe<Worker::Actor::FacetManager&> facetManager)
     : id(kj::mv(actorId)),
       exports(js, exports),
       props(js, props),
       storage(kj::mv(storage)),
       container(container.map([&](rpc::Container::Client& cap) {
-        return js.alloc<Container>(kj::mv(cap), containerRunning);
+        return js.alloc<Container>(kj::mv(cap), containerRunning, kj::mv(containerHealth));
       })),
       facetManager(facetManager.map(
           [&](Worker::Actor::FacetManager& ref) { return IoContext::current().addObject(ref); })) {}

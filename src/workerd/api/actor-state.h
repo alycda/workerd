@@ -568,6 +568,7 @@ class DurableObjectState: public jsg::Object {
       kj::Maybe<jsg::Ref<DurableObjectStorage>> storage,
       kj::Maybe<rpc::Container::Client> container,
       bool containerRunning,
+      kj::Maybe<kj::String> containerHealth,
       kj::Maybe<Worker::Actor::FacetManager&> facetManager);
 
   void waitUntil(kj::Promise<void> promise);
